@@ -1,0 +1,68 @@
+name: Tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+# Cancel concurent in-progress jobs or run on pull_request
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  ruff-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/ruff-action@v1
+        with:
+          args: "check --output-format concise"
+
+  ruff-format:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/ruff-action@v1
+        with:
+          args: "format --diff"
+
+  mypy:
+    name: Mypy ${{ matrix.python-version }}
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.12"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.pyton-version }}
+      - name: Run mypy
+        # Installing mypy here to bypass uv lockfile and run with a higher version
+        run: uv run --no-dev --group mypy --with mypy -- mypy
+
+  tests:
+    name: Tests Maya ${{ matrix.maya-version }}
+    strategy:
+      matrix:
+        maya-version: ["2025", "2024", "2023", "2022"]
+    runs-on: ubuntu-latest
+    container:
+      image: tahv/mayapy:${{ matrix.maya-version }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v4
+      - name: Sync environment
+        run: uv sync --no-dev --group test --group cov
+      - run: echo "PYTHONPATH=$(find .venv/lib/python*/site-packages -maxdepth 0):src" >> $GITHUB_ENV
+      - name: Run tests
+        run: uv run --no-sync -- mayapy -m coverage run -p -m pytest -vvv
+      - name: Upload coverage data
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-data-${{ matrix.maya-version }}
+          path: .coverage.*
+          if-no-files-found: ignore
