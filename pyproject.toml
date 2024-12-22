@@ -1,0 +1,126 @@
+#:schema https://json.schemastore.org/pyproject.json
+[project]
+name = "maya-attribs"
+description = "A Python library for creating Maya Attributes"
+readme = "README.md"
+license = { file = "LICENSE" }
+requires-python = ">=3.7"
+keywords = ["maya", "openmaya"]
+authors = [{ name = "Thibaud Gambier" }]
+dynamic = ["version"]
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "License :: OSI Approved :: MIT License",
+  "Programming Language :: Python :: 3.7",
+  "Programming Language :: Python :: 3.8",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: Implementation :: CPython",
+]
+dependencies = ["typing-extensions ; python_version < '3.11'"]
+
+[dependency-groups]
+dev = [
+  { include-group = "test" },
+  { include-group = "cov" },
+  { include-group = "mypy" },
+]
+# mypy = [
+#   "mypy>=1.4.1",
+#   "mypy>=1.12.0; python_version > '3.7'",
+#   "maya-stubs>=0.4.1",
+#   { include-group = "test" }
+# ]
+mypy = ["maya-stubs>=0.4.1", { include-group = "test" }]
+test = ["pytest>=7.4.4"]
+cov = ["coverage>=7.2.7"]
+
+[build-system]
+requires = ["setuptools", "setuptools-scm"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools_scm]
+local_scheme = "no-local-version"
+
+[tool.pyright]
+include = ["src"]
+reportMissingModuleSource = false # Can't resolve maya modules sources
+
+[tool.ruff]
+src = ["src"]
+include = ["src/**/*.py", "tests/**/*.py", "**/pyproject.toml"]
+
+[tool.ruff.lint.isort]
+required-imports = ["from __future__ import annotations"]
+
+[tool.ruff.lint]
+select = ["ALL"]
+pydocstyle.convention = "google"
+flake8-tidy-imports.ban-relative-imports = "all"
+ignore = [
+  "D100",   # Missing docstring in public module
+  "D104",   # Missing docstring in public package
+  "D105",   # Missing docstring in magic method
+  "D107",   # Missing docstring in `__init__`
+  "FIX002", # Line contains TODO, consider resolving the issue
+  "TD002",  # Missing author in TODO
+  "TD003",  # Missing issue link on the line following this TODO
+]
+unfixable = [
+  "ERA001", # Found commented-out code
+  "F401",   # Unused import
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**/test_*.py" = [
+  "D103",    # Missing docstring in public function
+  "INP001",  # File is part of an implicit namespace package. Add an `__init__.py`
+  "PLR0913", # Too many arguments in function definition
+  "PLR2004", # Magic value used in comparison, consider replacing with a constant variable
+  "PT004",   # Fixture does not return anything, add leading underscore
+  "PT011",   # `pytest.raises(...)` is too broad
+  "S101",    # Use of assert detected
+
+]
+"tests/**/conftest.py" = [
+  "INP001", # File is part of an implicit namespace package. Add an `__init__.py`
+]
+
+[tool.mypy]
+files = ["src", "tests"]
+disallow_untyped_defs = true
+check_untyped_defs = true
+disallow_any_unimported = true
+no_implicit_optional = true
+warn_return_any = true
+warn_unused_ignores = true
+warn_redundant_casts = true
+show_error_codes = true
+# disallow_any_generics = true
+# implicit_reexport = false
+# enable_incomplete_feature = ["Unpack"]
+
+[[tool.mypy.overrides]]
+# The `maya-stubs` package is incomplete
+module = "attribs.attributes"
+disable_error_code = ["attr-defined"]
+
+[tool.coverage.run]
+source = ["src/"]
+branch = true
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = true
+exclude_lines = [
+  "# pragma: no cover",
+  "if (False|0|TYPE_CHECKING):",
+  "if __name__ == ['\"]__main__['\"]:",
+  # https://github.com/nedbat/coveragepy/issues/970
+  "@overload",
+]
+
+[tool.coverage.paths]
+source = ["src/", "*/src"]
