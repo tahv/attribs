@@ -2,7 +2,6 @@
 
 An experimental Python library for creating Maya Attributes.
 
-<!--
 ## Installation
 
 Install attribs with pip:
@@ -10,7 +9,6 @@ Install attribs with pip:
 ```bash
 pip install maya-attribs
 ```
--->
 
 ## Quickstart
 
